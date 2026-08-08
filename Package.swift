@@ -4,7 +4,7 @@ import Foundation
 import PackageDescription
 
 let artifactVersion = "0.1.0"
-let artifactChecksum = "0000000000000000000000000000000000000000000000000000000000000000"
+let artifactChecksum = "dc74942608d096bbbedbbc23c76c109f2edcac7b1e2d99b950feec28ec2b17a8"
 let localArtifactPath = "Artifacts/CSodium.artifactbundle"
 let packageRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
 
