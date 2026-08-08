@@ -113,6 +113,7 @@ jobs:
           merge-multiple: true
       - name: Assemble and validate
         run: |
+          set -o pipefail
           mise run build:artifact | tee Build/checksum.txt
           mise run check:artifact
           swift .mise/lib/ValidateReleaseMatrix.swift Artifacts/CSodium.artifactbundle

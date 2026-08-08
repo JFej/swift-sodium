@@ -49,7 +49,11 @@ function Write-Variant([string] $Identifier, [string] $Platform, [string] $Tripl
     $Output = "$VariantsRoot/$Identifier"
     New-Item -ItemType Directory -Force -Path "$Output/library", "$Output/include" | Out-Null
     Copy-Item $Library.FullName "$Output/library/libsodium.lib" -Force
-    Copy-Item "$Source/src/libsodium/include/*" "$Output/include" -Recurse -Force
+    $PublicHeaders = "$Source/src/libsodium/include"
+    New-Item -ItemType Directory -Force -Path "$Output/include/sodium" | Out-Null
+    Copy-Item "$PublicHeaders/sodium.h" "$Output/include/sodium.h" -Force
+    Get-ChildItem "$PublicHeaders/sodium" -File -Filter "*.h" |
+        Copy-Item -Destination "$Output/include/sodium" -Force
     Copy-Item "$Source/LICENSE" "$Output/LICENSE.libsodium" -Force
     @{
         identifier = $Identifier
