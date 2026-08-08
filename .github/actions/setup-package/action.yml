@@ -28,7 +28,18 @@ runs:
         $env:Path -split ";" |
           Where-Object { $_ } |
           Out-File $env:GITHUB_PATH -Encoding utf8 -Append
-        @("INCLUDE", "LIB", "LIBPATH", "UniversalCRTSdkDir", "UCRTVersion", "VCINSTALLDIR", "VCToolsInstallDir", "WindowsSdkDir", "WindowsSDKVersion") |
+
+        $swiftSDKRoot = Get-ChildItem "$env:LOCALAPPDATA\Programs\Swift\Platforms" -Directory |
+          Sort-Object Name -Descending |
+          ForEach-Object { Join-Path $_.FullName "Windows.platform\Developer\SDKs\Windows.sdk" } |
+          Where-Object { Test-Path $_ } |
+          Select-Object -First 1
+        if (-not $swiftSDKRoot) {
+          throw "The Swift Windows SDK was not found."
+        }
+        $env:SDKROOT = $swiftSDKRoot
+
+        @("INCLUDE", "LIB", "LIBPATH", "SDKROOT", "UniversalCRTSdkDir", "UCRTVersion", "VCINSTALLDIR", "VCToolsInstallDir", "WindowsSdkDir", "WindowsSDKVersion") |
           ForEach-Object {
             $value = [Environment]::GetEnvironmentVariable($_)
             if ($value) {
