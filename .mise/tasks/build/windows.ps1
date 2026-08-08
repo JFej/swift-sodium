@@ -11,6 +11,16 @@ $ExpectedHash = $env:LIBSODIUM_SHA256
 if (-not $Version -or -not $Release -or -not $ExpectedHash) {
     throw "Run this task through mise so the pinned build environment is available."
 }
+
+$VSWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+if (-not (Test-Path $VSWhere)) {
+    throw "vswhere.exe was not found. Install Visual Studio with the MSBuild component."
+}
+$MSBuild = & $VSWhere -latest -products * -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
+if (-not $MSBuild) {
+    throw "MSBuild was not found in the installed Visual Studio instance."
+}
+
 $BuildRoot = if ($env:SODIUM_BUILD_ROOT) { $env:SODIUM_BUILD_ROOT } else { "$ProjectRoot/Build" }
 $VariantsRoot = if ($env:SODIUM_VARIANTS_ROOT) { $env:SODIUM_VARIANTS_ROOT } else { "$BuildRoot/variants" }
 $Archive = "$BuildRoot/cache/libsodium-$Version.tar.gz"
@@ -31,7 +41,8 @@ $Source = "$SourceParent/libsodium-$Version"
 $Solution = "$Source/builds/msvc/vs2026/libsodium.sln"
 
 function Write-Variant([string] $Identifier, [string] $Platform, [string] $Triple) {
-    msbuild $Solution /m /p:Configuration=ReleaseLIB /p:Platform=$Platform
+    & $MSBuild $Solution /m /p:Configuration=ReleaseLIB /p:Platform=$Platform
+    if ($LASTEXITCODE -ne 0) { throw "MSBuild failed for $Platform with exit code $LASTEXITCODE." }
     $Library = Get-ChildItem "$Source/bin/$Platform" -Recurse -Filter libsodium.lib | Select-Object -First 1
     if (-not $Library) { throw "No libsodium.lib produced for $Platform" }
 
