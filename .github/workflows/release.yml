@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version without a leading v
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Publish ${{ inputs.version }}
+    needs: quality
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: swift-actions/setup-swift@v2.4.0
+        with:
+          swift-version: "6.3.1"
+      - uses: actions/download-artifact@v8
+        with:
+          name: CSodium-artifact-bundle
+          path: release
+      - name: Read and apply checksum
+        id: metadata
+        run: |
+          checksum="$(tail -n 1 release/checksum.txt | tr -d '[:space:]')"
+          swift .mise/lib/SetRelease.swift "${{ inputs.version }}" "$checksum"
+          echo "checksum=$checksum" >> "$GITHUB_OUTPUT"
+      - name: Verify release manifest
+        run: |
+          test "$(swift package compute-checksum release/CSodium.artifactbundle.zip)" = "${{ steps.metadata.outputs.checksum }}"
+          git diff --check
+      - name: Commit release metadata
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Package.swift
+          git commit -m "chore(release): $VERSION"
+          git tag "$VERSION"
+          git push origin HEAD:main "$VERSION"
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release create "$VERSION" \
+            release/CSodium.artifactbundle.zip \
+            --generate-notes \
+            --title "$VERSION" \
+            --verify-tag

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Run memory and thread safety tests with Swift sanitizers"
+#MISE depends=["bootstrap"]
+
+set -euo pipefail
+swift test --sanitize address
+swift test --sanitize thread

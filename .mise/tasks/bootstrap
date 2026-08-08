@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Build the host Artifact Bundle and resolve dependencies"
+#MISE depends=["build:host"]
+
+set -euo pipefail
+:

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run the Swift Testing suite"
+#MISE depends=["bootstrap"]
+
+set -euo pipefail
+swift test

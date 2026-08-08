@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#MISE description="Validate Artifact Bundle metadata, libraries, and exported symbols"
+
+set -euo pipefail
+
+project_root="${MISE_PROJECT_ROOT:?}"
+bundle="$project_root/Artifacts/CSodium.artifactbundle"
+swift "$project_root/.mise/lib/ValidateArtifactBundle.swift" "$bundle"
+
+if command -v llvm-nm >/dev/null 2>&1; then
+  symbol_tool="llvm-nm"
+elif command -v nm >/dev/null 2>&1; then
+  symbol_tool="nm"
+else
+  echo "llvm-nm or nm is required to validate static libraries." >&2
+  exit 1
+fi
+
+required_symbols=(
+  sodium_init
+  sodium_version_string
+  crypto_secretbox_easy
+  crypto_aead_xchacha20poly1305_ietf_encrypt
+  crypto_generichash
+  crypto_pwhash_str
+  crypto_sign_detached
+)
+
+library_count=0
+while IFS= read -r library; do
+  library_count=$((library_count + 1))
+  [[ -s "$library" ]] || { echo "Empty library: $library" >&2; exit 1; }
+  symbols="$($symbol_tool --defined-only --extern-only "$library" 2>/dev/null)"
+  for symbol in "${required_symbols[@]}"; do
+    if ! grep -Eq "(^|[[:space:]_])${symbol}$" <<<"$symbols"; then
+      echo "Missing $symbol in $library" >&2
+      exit 1
+    fi
+  done
+done < <(find "$bundle/dist" -type f \( -name '*.a' -o -name '*.lib' \) | sort)
+
+[[ $library_count -gt 0 ]] || { echo "Artifact Bundle contains no static libraries." >&2; exit 1; }
+[[ -s "$bundle/LICENSE.libsodium" ]] || { echo "Missing libsodium license." >&2; exit 1; }
+[[ -s "$bundle/include/module.modulemap" ]] || { echo "Missing module map." >&2; exit 1; }
+echo "Validated symbols in $library_count static libraries"

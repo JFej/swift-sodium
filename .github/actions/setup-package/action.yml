@@ -1,0 +1,30 @@
+name: Setup Swift package
+description: Install Swift when requested and materialize the tested CSodium Artifact Bundle.
+
+inputs:
+  swift-version:
+    description: Swift version to install. Leave empty when mise already provides Swift.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install Swift
+      if: inputs.swift-version != ''
+      uses: swift-actions/setup-swift@v2.4.0
+      with:
+        swift-version: ${{ inputs.swift-version }}
+    - name: Download Artifact Bundle
+      uses: actions/download-artifact@v8
+      with:
+        name: CSodium-artifact-bundle
+        path: Artifacts
+    - name: Extract Artifact Bundle
+      if: runner.os != 'Windows'
+      shell: bash
+      run: cd Artifacts && unzip -q CSodium.artifactbundle.zip
+    - name: Extract Artifact Bundle on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: Expand-Archive Artifacts/CSodium.artifactbundle.zip Artifacts

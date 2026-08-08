@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="Format Swift sources and package tooling"
+
+set -euo pipefail
+swift format format \
+  --configuration .swift-format \
+  --recursive \
+  --in-place \
+  Package.swift Sources Tests Examples Benchmarks .mise/lib

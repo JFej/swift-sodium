@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run opt-in release performance benchmarks"
+#MISE depends=["bootstrap"]
+
+set -euo pipefail
+swift run --package-path Benchmarks --configuration release SodiumBenchmarks

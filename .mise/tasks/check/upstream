@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#MISE description="Run libsodium's native upstream test suite"
+#MISE depends=["build:host"]
+
+set -euo pipefail
+
+project_root="${MISE_PROJECT_ROOT:?}"
+case "$(uname -s)" in
+  Darwin) identifier="macos-$(uname -m)" ;;
+  Linux) identifier="linux-$(uname -m)" ;;
+  *) echo "Upstream runtime tests require a native macOS or Linux host." >&2; exit 1 ;;
+esac
+
+source_directory="$project_root/Build/work/$identifier/libsodium-$LIBSODIUM_VERSION"
+if [[ ! -d "$source_directory" ]]; then
+  echo "Configured libsodium source not found at $source_directory" >&2
+  exit 1
+fi
+
+make -C "$source_directory" check

@@ -1,0 +1,125 @@
+name: Build Artifact Bundle
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  apple:
+    name: Apple variants
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4.2.4
+      - name: Build Apple variants
+        run: mise run build:apple
+      - uses: actions/upload-artifact@v7
+        with:
+          name: variants-apple
+          path: Build/variants
+          if-no-files-found: error
+
+  linux:
+    name: Linux ${{ matrix.architecture }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            architecture: x86_64
+          - runner: ubuntu-24.04-arm
+            architecture: aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4.2.4
+      - name: Install native build tools
+        run: sudo apt-get update && sudo apt-get install --yes clang make pkg-config
+      - name: Build Linux variant
+        run: mise run build:linux
+      - uses: actions/upload-artifact@v7
+        with:
+          name: variants-linux-${{ matrix.architecture }}
+          path: Build/variants
+          if-no-files-found: error
+
+  android:
+    name: Android variants
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4.2.4
+      - name: Install Android NDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358"
+      - name: Build Android variants
+        run: ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358" mise run build:android
+      - uses: actions/upload-artifact@v7
+        with:
+          name: variants-android
+          path: Build/variants
+          if-no-files-found: error
+
+  windows:
+    name: Windows variants
+    runs-on: windows-2025-vs2026
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4.2.4
+      - name: Build Windows variants
+        run: mise run build:windows
+      - uses: actions/upload-artifact@v7
+        with:
+          name: variants-windows
+          path: Build/variants
+          if-no-files-found: error
+
+  wasi:
+    name: WASI variant
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4.2.4
+      - name: Install wasi-sdk
+        run: |
+          eval "$(mise env --shell bash)"
+          curl --fail --location --retry 3 \
+            "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-$WASI_SDK_VERSION/wasi-sdk-$WASI_SDK_VERSION.0-x86_64-linux.tar.gz" \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          echo "$WASI_SDK_LINUX_SHA256  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/wasi-sdk"
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/wasi-sdk"
+      - name: Build WASI variant
+        env:
+          WASI_SDK_PATH: ${{ runner.temp }}/wasi-sdk
+        run: mise run build:wasi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: variants-wasi
+          path: Build/variants
+          if-no-files-found: error
+
+  assemble:
+    name: Assemble Artifact Bundle
+    needs: [apple, linux, android, windows, wasi]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4.2.4
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: variants-*
+          path: Build/variants
+          merge-multiple: true
+      - name: Assemble and validate
+        run: |
+          mise run build:artifact | tee Build/checksum.txt
+          mise run check:artifact
+          swift .mise/lib/ValidateReleaseMatrix.swift Artifacts/CSodium.artifactbundle
+      - uses: actions/upload-artifact@v7
+        with:
+          name: CSodium-artifact-bundle
+          path: |
+            Artifacts/CSodium.artifactbundle.zip
+            Build/checksum.txt
+          if-no-files-found: error

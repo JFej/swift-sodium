@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#MISE description="Run Swift Format, ShellCheck, actionlint, and task validation"
+
+set -euo pipefail
+swift format lint \
+  --configuration .swift-format \
+  --recursive \
+  --strict \
+  Package.swift Sources Tests Examples Benchmarks .mise/lib
+shellcheck -x -P SCRIPTDIR \
+  .mise/tasks/bootstrap \
+  .mise/tasks/format \
+  .mise/tasks/lint \
+  .mise/tasks/test \
+  .mise/tasks/build/_default \
+  .mise/tasks/build/android \
+  .mise/tasks/build/apple \
+  .mise/tasks/build/artifact \
+  .mise/tasks/build/host \
+  .mise/tasks/build/linux \
+  .mise/tasks/build/wasi \
+  .mise/lib/common.sh
+actionlint
+mise tasks validate
