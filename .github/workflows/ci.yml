@@ -21,9 +21,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-package
       - name: Test
-        run: swift test
+        run: mise exec -- swift test
       - name: Build transitive consumer
-        run: swift run --package-path Examples/Consumer
+        run: mise exec -- swift run --package-path Examples/Consumer
 
   test-linux:
     name: Test Linux ${{ matrix.architecture }}
@@ -39,8 +39,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-package
-      - run: swift test
-      - run: swift run --package-path Examples/Consumer
+      - run: mise exec -- swift test
+      - run: mise exec -- swift run --package-path Examples/Consumer
 
   test-windows:
     name: Test Windows x86_64
@@ -49,8 +49,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-package
-      - run: swift test
-      - run: swift run --package-path Examples/Consumer
+      - run: mise exec -- swift test
+      - run: mise exec -- swift run --package-path Examples/Consumer
 
   compile-android:
     name: Compile Android (${{ matrix.target }})
@@ -67,16 +67,17 @@ jobs:
       - uses: ./.github/actions/setup-package
       - name: Install Swift Android SDK
         run: |
-          swift sdk install \
+          mise exec -- swift sdk install \
             https://download.swift.org/swift-6.3.3-release/android-sdk/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE_android.artifactbundle.tar.gz \
             --checksum d160cc3206dd1886dae3fef2337af5e25ec034692cd0ec225721c56cc69da7f5
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358"
-          sdk_root="$HOME/.swiftpm/swift-sdks/swift-6.3.3-RELEASE_android.artifactbundle/swift-android"
-          ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358" "$sdk_root/scripts/setup-android-sdk.sh"
+          setup_script="$(find "$HOME/.swiftpm/swift-sdks" -type f -name setup-android-sdk.sh -print -quit)"
+          test -n "$setup_script"
+          ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358" "$setup_script"
       - name: Compile package for Android
         run: |
-          swift build --package-path Examples/Consumer --swift-sdk "${{ matrix.target }}"
-          swift build --build-tests --swift-sdk "${{ matrix.target }}"
+          mise exec -- swift build --package-path Examples/Consumer --swift-sdk "${{ matrix.target }}"
+          mise exec -- swift build --build-tests --swift-sdk "${{ matrix.target }}"
 
   compile-wasi:
     name: Compile WASI consumer
@@ -87,13 +88,13 @@ jobs:
       - uses: ./.github/actions/setup-package
       - name: Install Swift WASI SDK
         run: |
-          swift sdk install \
+          mise exec -- swift sdk install \
             https://download.swift.org/swift-6.3.3-release/wasm-sdk/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE_wasm.artifactbundle.tar.gz \
             --checksum cabfa08b73bb8ac783927ecd15fa386e99d0c139c5f232445067bcf58379cae7
       - name: Compile package for WASI
         run: |
-          swift build --package-path Examples/Consumer --swift-sdk swift-6.3.3-RELEASE_wasm
-          swift build --build-tests --swift-sdk swift-6.3.3-RELEASE_wasm
+          mise exec -- swift build --package-path Examples/Consumer --swift-sdk swift-6.3.3-RELEASE_wasm
+          mise exec -- swift build --build-tests --swift-sdk swift-6.3.3-RELEASE_wasm
 
   compile-apple-platforms:
     name: Compile ${{ matrix.name }}
@@ -164,4 +165,4 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-package
       - run: mise run lint
-      - run: swift package dump-package > /dev/null
+      - run: mise exec -- swift package dump-package > /dev/null

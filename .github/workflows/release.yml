@@ -32,11 +32,11 @@ jobs:
         id: metadata
         run: |
           checksum="$(tail -n 1 release/checksum.txt | tr -d '[:space:]')"
-          swift .mise/lib/SetRelease.swift "${{ inputs.version }}" "$checksum"
+          mise exec -- swift .mise/lib/SetRelease.swift "${{ inputs.version }}" "$checksum"
           echo "checksum=$checksum" >> "$GITHUB_OUTPUT"
       - name: Verify release manifest
         run: |
-          test "$(swift package compute-checksum release/CSodium.artifactbundle.zip)" = "${{ steps.metadata.outputs.checksum }}"
+          test "$(mise exec -- swift package compute-checksum release/CSodium.artifactbundle.zip)" = "${{ steps.metadata.outputs.checksum }}"
           git diff --check
       - name: Commit release metadata
         env:
