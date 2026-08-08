@@ -41,7 +41,7 @@ $Source = "$SourceParent/libsodium-$Version"
 $Solution = "$Source/builds/msvc/vs2026/libsodium.sln"
 
 function Write-Variant([string] $Identifier, [string] $Platform, [string] $Triple) {
-    & $MSBuild $Solution /m /p:Configuration=ReleaseLIB /p:Platform=$Platform
+    & $MSBuild $Solution /m /p:Configuration=StaticRelease /p:Platform=$Platform
     if ($LASTEXITCODE -ne 0) { throw "MSBuild failed for $Platform with exit code $LASTEXITCODE." }
     $Library = Get-ChildItem "$Source/bin/$Platform" -Recurse -Filter libsodium.lib | Select-Object -First 1
     if (-not $Library) { throw "No libsodium.lib produced for $Platform" }
