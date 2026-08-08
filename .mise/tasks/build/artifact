@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#MISE description="Assemble and checksum the multi-platform Artifact Bundle"
+
+set -euo pipefail
+
+PROJECT_ROOT="${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+: "${LIBSODIUM_VERSION:?Run this command through mise}"
+
+variants="${SODIUM_VARIANTS_ROOT:-$PROJECT_ROOT/Build/variants}"
+bundle="$PROJECT_ROOT/Artifacts/CSodium.artifactbundle"
+archive="$PROJECT_ROOT/Artifacts/CSodium.artifactbundle.zip"
+
+swift "$PROJECT_ROOT/.mise/lib/AssembleArtifactBundle.swift" \
+  --variants "$variants" \
+  --output "$bundle" \
+  --version "$LIBSODIUM_VERSION"
+swift "$PROJECT_ROOT/.mise/lib/ValidateArtifactBundle.swift" "$bundle"
+
+mkdir -p "$PROJECT_ROOT/Artifacts"
+if [[ -f "$archive" ]]; then
+  rm "$archive"
+fi
+(
+  cd "$PROJECT_ROOT/Artifacts"
+  zip -qry "$(basename "$archive")" "$(basename "$bundle")"
+)
+
+swift package compute-checksum "$archive"

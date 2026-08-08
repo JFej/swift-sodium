@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#MISE description="Build the WASI libsodium variant"
+
+set -euo pipefail
+
+PROJECT_ROOT="${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+# shellcheck source=../../lib/common.sh
+source "$PROJECT_ROOT/.mise/lib/common.sh"
+
+if [[ -z "${WASI_SDK_PATH:-}" ]]; then
+  echo "WASI_SDK_PATH must point to wasi-sdk-$WASI_SDK_VERSION." >&2
+  exit 1
+fi
+
+build_autotools_variant \
+  "wasi-wasm32" \
+  "wasm32-unknown-wasi" \
+  "$WASI_SDK_PATH/bin/clang --sysroot=$WASI_SDK_PATH/share/wasi-sysroot" \
+  "$WASI_SDK_PATH/bin/llvm-ar" \
+  "$WASI_SDK_PATH/bin/llvm-ranlib" \
+  "-O2" \
+  "" \
+  "wasm32-unknown-wasi"

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#MISE description="Build all Android libsodium variants"
+
+set -euo pipefail
+
+PROJECT_ROOT="${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+# shellcheck source=../../lib/common.sh
+source "$PROJECT_ROOT/.mise/lib/common.sh"
+
+if [[ -z "${ANDROID_NDK_HOME:-}" ]]; then
+  echo "ANDROID_NDK_HOME must point to an Android NDK." >&2
+  exit 1
+fi
+
+case "$(uname -s)" in
+  # Google's macOS NDK is distributed in a directory named darwin-x86_64.
+  # Its Clang binaries are universal and run natively on Apple silicon.
+  Darwin) host_tag="darwin-x86_64" ;;
+  Linux) host_tag="linux-$(uname -m)" ;;
+  *) echo "Android cross-compilation requires macOS or Linux." >&2; exit 1 ;;
+esac
+
+toolchain="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$host_tag/bin"
+if [[ ! -d "$toolchain" ]]; then
+  echo "Android NDK toolchain not found at $toolchain" >&2
+  exit 1
+fi
+
+build_android_variant() {
+  local identifier="$1"
+  local configure_host="$2"
+  local compiler_prefix="$3"
+  local swift_architecture="$4"
+  local supported_triples=()
+  local api
+  for api in $(seq "$ANDROID_API_LEVEL" 36); do
+    supported_triples+=("$swift_architecture-unknown-linux-android$api")
+  done
+
+  build_autotools_variant \
+    "$identifier" \
+    "$configure_host" \
+    "$toolchain/${compiler_prefix}${ANDROID_API_LEVEL}-clang" \
+    "$toolchain/llvm-ar" \
+    "$toolchain/llvm-ranlib" \
+    "-O2 -fPIC" \
+    "" \
+    "${supported_triples[@]}"
+}
+
+build_android_variant \
+  "android-aarch64" "aarch64-linux-android" "aarch64-linux-android" "aarch64"
+build_android_variant \
+  "android-armv7" "armv7a-linux-androideabi" "armv7a-linux-androideabi" "armv7"
+build_android_variant \
+  "android-x86_64" "x86_64-linux-android" "x86_64-linux-android" "x86_64"

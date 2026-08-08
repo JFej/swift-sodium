@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#MISE description="Build all Apple libsodium variants"
+
+set -euo pipefail
+
+PROJECT_ROOT="${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+# shellcheck source=../../lib/common.sh
+source "$PROJECT_ROOT/.mise/lib/common.sh"
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  echo "Apple variants must be built on macOS." >&2
+  exit 1
+fi
+
+build_apple_variant() {
+  local identifier="$1"
+  local sdk="$2"
+  local clang_target="$3"
+  local configure_host="$4"
+  local supported_triple="$5"
+
+  local sdk_path
+  sdk_path="$(xcrun --sdk "$sdk" --show-sdk-path)"
+  build_autotools_variant \
+    "$identifier" \
+    "$configure_host" \
+    "$(xcrun --sdk "$sdk" --find clang) -target $clang_target -isysroot $sdk_path" \
+    "$(xcrun --sdk "$sdk" --find ar)" \
+    "$(xcrun --sdk "$sdk" --find ranlib)" \
+    "-O2 -fPIC" \
+    "-target $clang_target -isysroot $sdk_path" \
+    "$supported_triple"
+}
+
+build_apple_variant "macos-arm64" macosx \
+  "arm64-apple-macos14.0" "arm64-apple-darwin" "arm64-apple-macosx"
+build_apple_variant "macos-x86_64" macosx \
+  "x86_64-apple-macos14.0" "x86_64-apple-darwin" "x86_64-apple-macosx"
+
+build_apple_variant "ios-arm64" iphoneos \
+  "arm64-apple-ios16.0" "arm64-apple-darwin" "arm64-apple-ios"
+build_apple_variant "ios-simulator-arm64" iphonesimulator \
+  "arm64-apple-ios16.0-simulator" "arm64-apple-darwin" "arm64-apple-ios-simulator"
+build_apple_variant "ios-simulator-x86_64" iphonesimulator \
+  "x86_64-apple-ios16.0-simulator" "x86_64-apple-darwin" "x86_64-apple-ios-simulator"
+
+build_apple_variant "catalyst-arm64" macosx \
+  "arm64-apple-ios16.0-macabi" "arm64-apple-darwin" "arm64-apple-ios-macabi"
+build_apple_variant "catalyst-x86_64" macosx \
+  "x86_64-apple-ios16.0-macabi" "x86_64-apple-darwin" "x86_64-apple-ios-macabi"
+
+build_apple_variant "tvos-arm64" appletvos \
+  "arm64-apple-tvos16.0" "arm64-apple-darwin" "arm64-apple-tvos"
+build_apple_variant "tvos-simulator-arm64" appletvsimulator \
+  "arm64-apple-tvos16.0-simulator" "arm64-apple-darwin" "arm64-apple-tvos-simulator"
+build_apple_variant "tvos-simulator-x86_64" appletvsimulator \
+  "x86_64-apple-tvos16.0-simulator" "x86_64-apple-darwin" "x86_64-apple-tvos-simulator"
+
+build_apple_variant "watchos-arm64_32" watchos \
+  "arm64_32-apple-watchos9.0" "arm-apple-darwin" "arm64_32-apple-watchos"
+build_apple_variant "watchos-arm64" watchos \
+  "arm64-apple-watchos9.0" "arm64-apple-darwin" "arm64-apple-watchos"
+build_apple_variant "watchos-simulator-arm64" watchsimulator \
+  "arm64-apple-watchos9.0-simulator" "arm64-apple-darwin" "arm64-apple-watchos-simulator"
+build_apple_variant "watchos-simulator-x86_64" watchsimulator \
+  "x86_64-apple-watchos9.0-simulator" "x86_64-apple-darwin" "x86_64-apple-watchos-simulator"
+
+build_apple_variant "visionos-arm64" xros \
+  "arm64-apple-xros1.0" "arm64-apple-darwin" "arm64-apple-xros"
+build_apple_variant "visionos-simulator-arm64" xrsimulator \
+  "arm64-apple-xros1.0-simulator" "arm64-apple-darwin" "arm64-apple-xros-simulator"
+build_apple_variant "visionos-simulator-x86_64" xrsimulator \
+  "x86_64-apple-xros1.0-simulator" "x86_64-apple-darwin" "x86_64-apple-xros-simulator"

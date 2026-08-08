@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+#MISE description="Build and assemble the native host Artifact Bundle"
+#MISE sources=[".mise.toml", ".mise/lib/common.sh", ".mise/tasks/build/host", ".mise/tasks/build/linux"]
+#MISE outputs=["Artifacts/CSodium.artifactbundle/info.json"]
+
+set -euo pipefail
+
+PROJECT_ROOT="${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+# shellcheck source=../../lib/common.sh
+source "$PROJECT_ROOT/.mise/lib/common.sh"
+
+case "$(uname -s)" in
+  Darwin)
+    architecture="$(uname -m)"
+    sdk_path="$(xcrun --sdk macosx --show-sdk-path)"
+    clang="$(xcrun --sdk macosx --find clang)"
+    target="$architecture-apple-macos14.0"
+    build_autotools_variant \
+      "macos-$architecture" \
+      "$architecture-apple-darwin" \
+      "$clang -target $target -isysroot $sdk_path" \
+      "$(xcrun --sdk macosx --find ar)" \
+      "$(xcrun --sdk macosx --find ranlib)" \
+      "-O2 -fPIC" \
+      "-target $target -isysroot $sdk_path" \
+      "$architecture-apple-macosx"
+    ;;
+  Linux)
+    "$PROJECT_ROOT/.mise/tasks/build/linux"
+    ;;
+  *)
+    echo "Host bootstrap supports macOS and Linux. Use the platform-specific build script." >&2
+    exit 1
+    ;;
+esac
+
+swift "$PROJECT_ROOT/.mise/lib/AssembleArtifactBundle.swift" \
+  --variants "$VARIANTS_ROOT" \
+  --output "$PROJECT_ROOT/Artifacts/CSodium.artifactbundle" \
+  --version "$LIBSODIUM_VERSION"
+
+swift package --package-path "$PROJECT_ROOT" resolve

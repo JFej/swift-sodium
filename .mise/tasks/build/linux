@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#MISE description="Build the native Linux libsodium variant"
+
+set -euo pipefail
+
+PROJECT_ROOT="${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+# shellcheck source=../../lib/common.sh
+source "$PROJECT_ROOT/.mise/lib/common.sh"
+
+machine="$(uname -m)"
+case "$machine" in
+  aarch64|arm64) architecture="aarch64" ;;
+  x86_64) architecture="x86_64" ;;
+  *) echo "Unsupported Linux architecture: $machine" >&2; exit 1 ;;
+esac
+
+build_autotools_variant \
+  "linux-$architecture" \
+  "$architecture-unknown-linux-gnu" \
+  "${CC:-clang}" \
+  "${AR:-ar}" \
+  "${RANLIB:-ranlib}" \
+  "-O2 -fPIC" \
+  "" \
+  "$architecture-unknown-linux-gnu"
