@@ -117,10 +117,11 @@ jobs:
           mise run build:artifact | tee Build/checksum.txt
           mise run check:artifact
           swift .mise/lib/ValidateReleaseMatrix.swift Artifacts/CSodium.artifactbundle
+          cp Artifacts/CSodium.artifactbundle.zip Build/CSodium.artifactbundle.zip
       - uses: actions/upload-artifact@v7
         with:
           name: CSodium-artifact-bundle
           path: |
-            Artifacts/CSodium.artifactbundle.zip
+            Build/CSodium.artifactbundle.zip
             Build/checksum.txt
           if-no-files-found: error
