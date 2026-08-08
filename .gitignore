@@ -4,7 +4,7 @@ Package.resolved
 .DS_Store
 Artifacts/*.artifactbundle
 Artifacts/*.zip
-Build/
+/Build/
 DerivedData/
 docs/
 *.xcresult
