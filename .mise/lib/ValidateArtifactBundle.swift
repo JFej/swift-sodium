@@ -31,6 +31,7 @@ enum ValidationError: Error, CustomStringConvertible {
   case missingPath(String)
   case duplicateTriple(String)
   case emptyVariants
+  case invalidWindowsLibrary(String)
 
   var description: String {
     switch self {
@@ -41,6 +42,8 @@ enum ValidationError: Error, CustomStringConvertible {
       case .missingPath(let path): return "Referenced path does not exist: \(path)"
       case .duplicateTriple(let triple): return "Triple occurs in multiple variants: \(triple)"
       case .emptyVariants: return "Artifact contains no variants"
+      case .invalidWindowsLibrary(let path):
+        return "Windows variants must provide sodium.lib, found \(path)"
     }
   }
 }
@@ -63,6 +66,11 @@ do {
 
   var triples = Set<String>()
   for variant in artifact.variants {
+    if variant.supportedTriples.contains(where: { $0.contains("windows-msvc") }),
+      URL(filePath: variant.path).lastPathComponent != "sodium.lib"
+    {
+      throw ValidationError.invalidWindowsLibrary(variant.path)
+    }
     let paths =
       [variant.path]
       + variant.staticLibraryMetadata.headerPaths

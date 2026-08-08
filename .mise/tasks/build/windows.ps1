@@ -48,7 +48,8 @@ function Write-Variant([string] $Identifier, [string] $Platform, [string] $Tripl
 
     $Output = "$VariantsRoot/$Identifier"
     New-Item -ItemType Directory -Force -Path "$Output/library", "$Output/include" | Out-Null
-    Copy-Item $Library.FullName "$Output/library/libsodium.lib" -Force
+    # sodium.h uses MSVC's `#pragma comment(lib, "sodium")`.
+    Copy-Item $Library.FullName "$Output/library/sodium.lib" -Force
     $PublicHeaders = "$Source/src/libsodium/include"
     New-Item -ItemType Directory -Force -Path "$Output/include/sodium" | Out-Null
     Copy-Item "$PublicHeaders/sodium.h" "$Output/include/sodium.h" -Force
@@ -57,7 +58,7 @@ function Write-Variant([string] $Identifier, [string] $Platform, [string] $Tripl
     Copy-Item "$Source/LICENSE" "$Output/LICENSE.libsodium" -Force
     @{
         identifier = $Identifier
-        library = "library/libsodium.lib"
+        library = "library/sodium.lib"
         supportedTriples = @($Triple)
     } | ConvertTo-Json | Set-Content "$Output/metadata.json"
 }
