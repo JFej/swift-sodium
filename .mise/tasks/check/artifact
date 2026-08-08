@@ -7,11 +7,19 @@ project_root="${MISE_PROJECT_ROOT:?}"
 bundle="$project_root/Artifacts/CSodium.artifactbundle"
 swift "$project_root/.mise/lib/ValidateArtifactBundle.swift" "$bundle"
 
-if command -v llvm-nm >/dev/null 2>&1; then
-  symbol_tool="llvm-nm"
-elif command -v nm >/dev/null 2>&1; then
+symbol_tool=""
+for candidate in llvm-nm /usr/bin/llvm-nm-* /usr/local/bin/llvm-nm-*; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    symbol_tool="$candidate"
+    break
+  fi
+done
+
+if [[ -z "$symbol_tool" ]] && command -v nm >/dev/null 2>&1; then
   symbol_tool="nm"
-else
+fi
+
+if [[ -z "$symbol_tool" ]]; then
   echo "llvm-nm or nm is required to validate static libraries." >&2
   exit 1
 fi
@@ -30,7 +38,11 @@ library_count=0
 while IFS= read -r library; do
   library_count=$((library_count + 1))
   [[ -s "$library" ]] || { echo "Empty library: $library" >&2; exit 1; }
-  symbols="$($symbol_tool --defined-only --extern-only "$library" 2>/dev/null)"
+  if ! symbols="$($symbol_tool --defined-only --extern-only "$library" 2>&1)"; then
+    echo "Unable to inspect symbols in $library with $symbol_tool:" >&2
+    echo "$symbols" >&2
+    exit 1
+  fi
   for symbol in "${required_symbols[@]}"; do
     if ! grep -Eq "(^|[[:space:]_])${symbol}$" <<<"$symbols"; then
       echo "Missing $symbol in $library" >&2
