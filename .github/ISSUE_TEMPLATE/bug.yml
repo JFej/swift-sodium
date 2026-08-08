@@ -17,7 +17,7 @@ body:
     id: swift
     attributes:
       label: Swift version and target triple
-      placeholder: Swift 6.3.1, aarch64-unknown-linux-gnu
+      placeholder: Swift 6.3.3, aarch64-unknown-linux-gnu
     validations:
       required: true
   - type: textarea

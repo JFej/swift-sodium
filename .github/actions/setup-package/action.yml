@@ -1,20 +1,11 @@
 name: Setup Swift package
-description: Install Swift when requested and materialize the tested CSodium Artifact Bundle.
-
-inputs:
-  swift-version:
-    description: Swift version to install. Leave empty when mise already provides Swift.
-    required: false
-    default: ""
+description: Install the pinned toolchain and materialize the tested CSodium Artifact Bundle.
 
 runs:
   using: composite
   steps:
-    - name: Install Swift
-      if: inputs.swift-version != ''
-      uses: swift-actions/setup-swift@v2.4.0
-      with:
-        swift-version: ${{ inputs.swift-version }}
+    - name: Install toolchain
+      uses: jdx/mise-action@v4.2.4
     - name: Download Artifact Bundle
       uses: actions/download-artifact@v8
       with:
