@@ -12,14 +12,30 @@ runs:
       shell: pwsh
       run: |
         winget install --id Swift.Toolchain --exact --version 6.3.3 --source winget --silent --accept-package-agreements --accept-source-agreements
-        $roots = @("$env:LOCALAPPDATA\Programs\Swift", "$env:ProgramFiles\Swift") |
-          Where-Object { Test-Path $_ }
-        $swift = Get-ChildItem $roots -Filter swift.exe -Recurse |
+
+        $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+        $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        $env:Path = [Environment]::ExpandEnvironmentVariables("$userPath;$machinePath;$env:Path")
+
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $installationPath = & $vswhere -latest -products * -property installationPath |
           Select-Object -First 1
-        if ($null -eq $swift) {
-          throw "Swift installation did not contain swift.exe."
+        if (-not $installationPath) {
+          throw "Visual Studio installation was not found."
         }
-        $swift.DirectoryName | Out-File $env:GITHUB_PATH -Encoding utf8 -Append
+        & "$installationPath\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+
+        $env:Path -split ";" |
+          Where-Object { $_ } |
+          Out-File $env:GITHUB_PATH -Encoding utf8 -Append
+        @("INCLUDE", "LIB", "LIBPATH", "UniversalCRTSdkDir", "UCRTVersion", "VCINSTALLDIR", "VCToolsInstallDir", "WindowsSdkDir", "WindowsSDKVersion") |
+          ForEach-Object {
+            $value = [Environment]::GetEnvironmentVariable($_)
+            if ($value) {
+              "$_=$value" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+        swift --version
     - name: Download Artifact Bundle
       uses: actions/download-artifact@v8
       with:
