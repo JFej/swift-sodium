@@ -49,8 +49,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-package
-      - run: mise exec -- swift test
-      - run: mise exec -- swift run --package-path Examples/Consumer
+      - run: swift test
+      - run: swift run --package-path Examples/Consumer
 
   compile-android:
     name: Compile Android (${{ matrix.target }})
@@ -71,7 +71,7 @@ jobs:
             https://download.swift.org/swift-6.3.3-release/android-sdk/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE_android.artifactbundle.tar.gz \
             --checksum d160cc3206dd1886dae3fef2337af5e25ec034692cd0ec225721c56cc69da7f5
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358"
-          setup_script="$(find "$HOME/.swiftpm/swift-sdks" -type f -name setup-android-sdk.sh -print -quit)"
+          setup_script="$(find "$HOME" -path '*/swift-sdks/*/scripts/setup-android-sdk.sh' -print -quit)"
           test -n "$setup_script"
           ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358" "$setup_script"
       - name: Compile package for Android
