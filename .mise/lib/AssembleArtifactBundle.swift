@@ -157,9 +157,18 @@ do {
     )
   }
 
+  let umbrellaHeader = """
+    #ifndef CSODIUM_H
+    #define CSODIUM_H
+    #define SODIUM_STATIC 1
+    #include "sodium.h"
+    #endif
+    """
+  try Data(umbrellaHeader.utf8).write(to: outputInclude.appending(path: "CSodium.h"))
+
   let moduleMap = """
     module CSodium [system] {
-      umbrella header "sodium.h"
+      umbrella header "CSodium.h"
       export *
     }
     """

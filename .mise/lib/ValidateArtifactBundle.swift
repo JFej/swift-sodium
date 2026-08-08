@@ -32,6 +32,7 @@ enum ValidationError: Error, CustomStringConvertible {
   case duplicateTriple(String)
   case emptyVariants
   case invalidWindowsLibrary(String)
+  case invalidUmbrellaHeader
 
   var description: String {
     switch self {
@@ -44,6 +45,8 @@ enum ValidationError: Error, CustomStringConvertible {
       case .emptyVariants: return "Artifact contains no variants"
       case .invalidWindowsLibrary(let path):
         return "Windows variants must provide sodium.lib, found \(path)"
+      case .invalidUmbrellaHeader:
+        return "CSodium.h must define SODIUM_STATIC before including sodium.h"
     }
   }
 }
@@ -63,6 +66,15 @@ do {
     throw ValidationError.invalidType(artifact.type)
   }
   guard !artifact.variants.isEmpty else { throw ValidationError.emptyVariants }
+
+  let umbrellaHeader = root.appending(path: "include/CSodium.h")
+  guard let umbrellaContents = try? String(contentsOf: umbrellaHeader, encoding: .utf8),
+    let staticDefinition = umbrellaContents.range(of: "#define SODIUM_STATIC 1"),
+    let sodiumInclude = umbrellaContents.range(of: "#include \"sodium.h\""),
+    staticDefinition.lowerBound < sodiumInclude.lowerBound
+  else {
+    throw ValidationError.invalidUmbrellaHeader
+  }
 
   var triples = Set<String>()
   for variant in artifact.variants {
