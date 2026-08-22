@@ -151,7 +151,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4.2.4
+      - uses: jdx/mise-action@v4.2.5
       - name: Install native build tools
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --yes clang make pkg-config

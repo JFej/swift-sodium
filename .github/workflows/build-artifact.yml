@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4.2.4
+      - uses: jdx/mise-action@v4.2.5
       - name: Build Apple variants
         run: mise run build:apple
       - uses: actions/upload-artifact@v7
@@ -33,7 +33,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4.2.4
+      - uses: jdx/mise-action@v4.2.5
       - name: Install native build tools
         run: sudo apt-get update && sudo apt-get install --yes clang make pkg-config
       - name: Build Linux variant
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4.2.4
+      - uses: jdx/mise-action@v4.2.5
       - name: Install Android NDK
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358"
       - name: Build Android variants
@@ -65,7 +65,7 @@ jobs:
     runs-on: windows-2025-vs2026
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4.2.4
+      - uses: jdx/mise-action@v4.2.5
       - name: Build Windows variants
         run: mise run build:windows
       - uses: actions/upload-artifact@v7
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4.2.4
+      - uses: jdx/mise-action@v4.2.5
       - name: Install wasi-sdk
         run: |
           eval "$(mise env --shell bash)"
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4.2.4
+      - uses: jdx/mise-action@v4.2.5
       - uses: actions/download-artifact@v8
         with:
           pattern: variants-*
